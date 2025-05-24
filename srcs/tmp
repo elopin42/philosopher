@@ -1,0 +1,413 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   clean_up.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/20 11:46:40 by elopin            #+#    #+#             */
+/*   Updated: 2025/05/20 12:10:24 by elopin           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../inc/philo.h"
+#include <pthread.h>
+
+void	ft_clean_up(t_global *glb)
+{
+	int	i;
+
+	i = -1;
+	while(++i < glb->nbr_philo)
+	{
+		pthread_mutex_destroy(&glb->philo[i].mutex_meal);
+		pthread_mutex_destroy(&glb->fork[i]);
+    pthread_mutex_destroy(&glb->philo[i].mutex_a);
+	}
+	pthread_mutex_destroy(&glb->mutex_meal);
+	pthread_mutex_destroy(&glb->death_mu);
+	free(glb->fork);
+	free(glb->philo);
+	i = -1;
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/12 20:01:59 by elopin            #+#    #+#             */
+/*   Updated: 2025/05/21 19:09:50 by elopin           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../inc/philo.h"
+#include <pthread.h>
+
+bool	ft_create_struct_for_philo(t_global *glb)
+{
+	int	i;
+
+	i = -1;
+	glb->philo = malloc(sizeof(t_philo) * glb->rules.nb_philo);
+	if (!glb->philo)
+		return (false);
+	glb->fork = malloc(sizeof(pthread_mutex_t) * glb->rules.nb_philo);
+	if (!glb->fork)
+		return (false);
+	while (++i < glb->rules.nb_philo)
+	{
+		pthread_mutex_init(&glb->fork[i], NULL);
+		pthread_mutex_init(&glb->philo[i].mutex_meal, NULL);
+    pthread_mutex_init(&glb->philo[i].mutex_a, NULL);
+		glb->philo[i].id = i;
+		glb->philo[i].state = 0;
+		glb->philo[i].left_fork = &glb->fork[i];
+		glb->philo[i].right_fork = &glb->fork[(i + 1) % glb->rules.nb_philo];
+		glb->philo[i].rules = &glb->rules;
+		glb->philo[i].death = &glb->death;
+		glb->philo[i].last_meal = glb->start;
+		glb->philo[i].start = glb->start;
+		glb->philo[i].print_mutex = &glb->print_mutex;
+		glb->philo[i].death_mu = &glb->death_mu;
+		glb->philo[i].a = -1;
+	}
+	glb->nbr_philo = i;
+	return (true);
+}
+
+bool	ft_init_before_play(t_global *glb, int ac, char **av)
+{
+	if (ac < 5 || ac > 6)
+		return (printf("argument\n"), false);
+	glb->rules.nb_philo = ft_atoi(av[1]);
+	glb->rules.time_to_die = ft_atoi(av[2]);
+	glb->rules.time_to_eat = ft_atoi(av[3]);
+	glb->rules.time_to_sleep = ft_atoi(av[4]);
+	glb->death = 1;
+	glb->start = get_time_in_ms();
+	if (ac == 6)
+		glb->rules.loop = ft_atoi(av[5]);
+	else
+		glb->rules.loop = -1;
+	if (glb->rules.nb_philo <= 0 || glb->rules.time_to_eat < 0
+		|| glb->rules.time_to_die < 0 || glb->rules.time_to_sleep < 0
+		|| (ac == 6 && glb->rules.loop < 0))
+		return (printf("bad_value\n"), false);
+	pthread_mutex_init(&glb->mutex_meal, NULL);
+	pthread_mutex_init(&glb->death_mu, NULL);
+	pthread_mutex_init(&glb->print_mutex, NULL);
+	ft_create_struct_for_philo(glb);
+	return (true);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/17 15:00:18 by elopin            #+#    #+#             */
+/*   Updated: 2025/05/21 19:10:10 by elopin           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../inc/philo.h"
+#include <pthread.h>
+#include <stdio.h>
+
+void	fake_routine(t_global *glb)
+{
+	printf("%ld %d has taken a fork\n", get_time_in_ms() - glb->start, 1);
+	usleep(glb->rules.time_to_die * 1000);
+	printf("%ld %d died\n", get_time_in_ms() - glb->start, 1);
+}
+
+void	*ft_thread_death(void *arg)
+{
+	t_global	*glb;
+	long		laps;
+	int			i;
+
+	glb = (t_global *)arg;
+	while (1)
+	{
+		i = -1;
+		while (++i < glb->nbr_philo)
+		{
+			pthread_mutex_lock(&glb->philo[i].mutex_meal);
+			laps = (glb->philo[i].last_meal - get_time_in_ms()) * -1;
+			pthread_mutex_unlock(&glb->philo[i].mutex_meal);
+			//printf("laps --> %ld, time --> %d\n", laps, glb->rules.time_to_die);
+			if (laps >= glb->rules.time_to_die)
+			{
+				pthread_mutex_lock(&glb->death_mu);
+				glb->death = 0;
+				pthread_mutex_unlock(&glb->death_mu);
+				pti_printf("%ld %d died\n", glb->philo);
+				return (NULL);
+			}
+			if (glb->rules.loop > 0 && glb->philo[i].a >= glb->rules.loop)
+			{
+				pthread_mutex_lock(&glb->death_mu);
+				glb->death = 0;
+				pthread_mutex_unlock(&glb->death_mu);
+				printf("%d loop\n", glb->rules.loop);
+				return (NULL);
+			}
+		}
+		usleep(1000);
+	}
+	return (NULL);
+}
+
+int	main(int ac, char **av)
+{
+	t_global	glb;
+	int			i;
+	pthread_t	*threads;
+
+	i = -1;
+	if (!ft_init_before_play(&glb, ac, av))
+		return (printf("Error\n"), -1);
+	if (glb.nbr_philo == 1)
+		return (fake_routine(&glb), 0);
+	threads = malloc(sizeof(pthread_t) * glb.rules.nb_philo);
+	if (!threads)
+		return (-1);
+	pthread_create(&glb.thread_death, NULL, ft_thread_death, &glb);
+	glb.start = get_time_in_ms();
+	while (++i < glb.rules.nb_philo)
+		pthread_create(&threads[i], NULL, ft_routine, &glb.philo[i]);
+	i = -1;
+	while(++i < glb.rules.nb_philo)
+	{
+		pthread_join(threads[i], NULL);
+		//printf("threads[%d]\n", i);
+	}
+	pthread_join(glb.thread_death, NULL);
+	free(threads);
+	ft_clean_up(&glb);
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   routine.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 16:31:12 by elopin            #+#    #+#             */
+/*   Updated: 2025/05/21 22:36:38 by elopin           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../inc/philo.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
+
+void	choose_direction_unlock(t_philo *philo, int i, int y);
+
+bool	check_if_dead(t_philo *philo)
+{
+	bool	is_alive;
+
+	pthread_mutex_lock(&philo->mutex_meal);
+	pthread_mutex_lock(philo->death_mu);
+	is_alive = (*philo->death != 0);
+	pthread_mutex_unlock(philo->death_mu);
+	pthread_mutex_unlock(&philo->mutex_meal);
+	return (is_alive);
+}
+
+long	get_time_in_ms(void)
+{
+	struct timeval	t;
+
+	gettimeofday(&t, NULL);
+	return (t.tv_sec * 1000 + t.tv_usec / 1000);
+}
+
+int	choose_direction(t_philo *philo, int *i, int *y)
+{
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
+
+	if (philo->left_fork < philo->right_fork)
+	{
+		first = philo->left_fork;
+		second = philo->right_fork;
+	}
+	else
+	{
+		first = philo->right_fork;
+		second = philo->left_fork;
+	}
+	if (!*i && !pthread_mutex_lock(first))
+	{
+		pti_printf("%ld %d has taken a fork\n", philo);
+		first = philo->left_fork;
+		i++;
+	}
+	if (!*y && !pthread_mutex_lock(second))
+	{
+		pti_printf("%ld %d has taken a fork\n", philo);
+		second = philo->right_fork;
+		y++;
+	}
+	choose_direction_unlock(philo, *i, *y);
+	return (1);
+}
+
+void	choose_direction_unlock(t_philo *philo, int i, int y)
+{
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
+
+	(void)i;
+	(void)y;
+	if (philo->left_fork < philo->right_fork)
+	{
+		first = philo->left_fork;
+		second = philo->right_fork;
+	}
+	else
+	{
+		first = philo->right_fork;
+		second = philo->left_fork;
+	}
+	pti_printf("%ld %d is eating\n", philo);
+	pthread_mutex_lock(&philo->mutex_meal);
+	philo->last_meal = get_time_in_ms();
+	pthread_mutex_unlock(&philo->mutex_meal);
+	usleep(philo->rules->time_to_eat * 1000);
+	pthread_mutex_unlock(first);
+	pthread_mutex_unlock(second);
+}
+
+void	*ft_routine(void *arg)
+{
+	t_philo	*philo;
+	int		i;
+	int		y;
+	int		a;
+  int a_val;
+
+	philo = (t_philo *)arg;
+	while (check_if_dead(philo))
+	{
+		y = -1;
+		i = -1;
+		a = 0;
+		pthread_mutex_lock(&philo->mutex_meal);
+		philo->last_meal = get_time_in_ms();
+		pthread_mutex_unlock(&philo->mutex_meal);
+		if (philo->id % 2 == 0)
+			usleep(1000);
+    pthread_mutex_lock(&philo->mutex_a);
+    a_val = ++philo->a;
+    pthread_mutex_unlock(&philo->mutex_a);
+		if (philo->rules->loop > 0 && a_val >= philo->rules->loop)
+			return (NULL);
+		i = 0;
+		y = 0;
+		if (!a)
+			a = choose_direction(philo, &i, &y);
+		if (check_if_dead(philo))
+		{
+			pti_printf("%ld %d is sleeping\n", philo);
+			usleep(philo->rules->time_to_sleep * 1000);
+		}
+		if (check_if_dead(philo))
+			pti_printf("%ld %d is thinking\n", philo);
+	}
+	return (NULL);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   tools_libft.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 13:33:42 by elopin            #+#    #+#             */
+/*   Updated: 2025/05/21 13:15:24 by elopin           ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../inc/philo.h"
+#include <bits/pthreadtypes.h>
+#include <pthread.h>
+#include <stdio.h>
+
+void	pti_printf(char *str, t_philo *philo)
+{
+	pthread_mutex_lock(philo->print_mutex);
+	if (check_if_dead(philo))
+		printf(str, get_time_in_ms() - philo->start, philo->id + 1);
+	else if (ft_strnstr(str, "died", ft_strlen(str)))
+		printf(str, get_time_in_ms() - philo->start, philo->id + 1);
+	pthread_mutex_unlock(philo->print_mutex);
+}
+int		ft_strnstr(const char	*b, const char	*li, size_t	l)
+{
+	size_t	i;
+	size_t	j;
+
+	i = 0;
+	if (!*li)
+		return (0);
+	while (b[i])
+	{
+		j = 0;
+		while (li[j] == b[i] && b[i] && i < l)
+		{
+			i++;
+			j++;
+		}
+		if (!li[j])
+			return (j);
+	i -= j;
+	i++;
+	}
+	return (0);
+}
+
+int ft_strlen(char *str)
+{
+	int	i;
+	
+	i = 0;
+	while(str[i])
+		i++;
+	return (i);
+}
+
+int	ft_atoi(const char *str)
+{
+	int	ret;
+	int	sign;
+	int	i;
+
+	if (!str || str[0] == '\0')
+		return (-1);
+	i = 0;
+	ret = 0;
+	sign = 1;
+	while (*str == '\t' || *str == '\f' || *str == '\v' || *str == '\r'
+		|| *str == '\n' || *str == 32)
+		str++;
+	if (*str == '-' || *str == '+')
+	{
+		if (*str == '-')
+			return (-1);
+		str++;
+	}
+	while (str[i] >= '0' && str[i] <= '9' && str[i] != '\0')
+		ret = 10 * ret + (str[i++] - '0');
+	if (str[i] != '\0')
+		return (-1);
+	return (ret * sign);
+}

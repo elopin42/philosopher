@@ -42,6 +42,7 @@ typedef struct s_philo
 	pthread_mutex_t	mutex_meal;
 	pthread_mutex_t	*print_mutex;
 	pthread_mutex_t *death_mu;
+  pthread_mutex_t mutex_a;
 	int a;
 }					t_philo;
 

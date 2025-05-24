@@ -100,6 +100,7 @@ void	*ft_routine(void *arg)
 	int		i;
 	int		y;
 	int		a;
+  int a_val;
 
 	philo = (t_philo *)arg;
 	while (check_if_dead(philo))
@@ -112,7 +113,10 @@ void	*ft_routine(void *arg)
 		pthread_mutex_unlock(&philo->mutex_meal);
 		if (philo->id % 2 == 0)
 			usleep(1000);
-		if (philo->rules->loop > 0 && ++philo->a >= philo->rules->loop)
+    pthread_mutex_lock(&philo->mutex_a);
+    a_val = ++philo->a;
+    pthread_mutex_unlock(&philo->mutex_a);
+		if (philo->rules->loop > 0 && a_val >= philo->rules->loop)
 			return (NULL);
 		i = 0;
 		y = 0;

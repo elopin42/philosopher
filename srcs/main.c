@@ -26,7 +26,9 @@ void	*ft_thread_death(void *arg)
 	t_global	*glb;
 	long		laps;
 	int			i;
+  int a_val;
 
+  a_val = 0;
 	glb = (t_global *)arg;
 	while (1)
 	{
@@ -45,7 +47,10 @@ void	*ft_thread_death(void *arg)
 				pti_printf("%ld %d died\n", glb->philo);
 				return (NULL);
 			}
-			if (glb->rules.loop > 0 && glb->philo[i].a >= glb->rules.loop)
+      pthread_mutex_lock(&glb->philo[i].mutex_a);
+      a_val = glb->philo[i].a;
+      pthread_mutex_unlock(&glb->philo[i].mutex_a);
+			if (glb->rules.loop > 0 && a_val >= glb->rules.loop)
 			{
 				pthread_mutex_lock(&glb->death_mu);
 				glb->death = 0;
@@ -67,12 +72,12 @@ int	main(int ac, char **av)
 
 	i = -1;
 	if (!ft_init_before_play(&glb, ac, av))
-		return (printf("Error\n"), -1);
+		return (printf("Error\n"), 1);
 	if (glb.nbr_philo == 1)
 		return (fake_routine(&glb), 0);
 	threads = malloc(sizeof(pthread_t) * glb.rules.nb_philo);
 	if (!threads)
-		return (-1);
+		return (1);
 	pthread_create(&glb.thread_death, NULL, ft_thread_death, &glb);
 	glb.start = get_time_in_ms();
 	while (++i < glb.rules.nb_philo)

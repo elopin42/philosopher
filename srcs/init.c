@@ -28,6 +28,7 @@ bool	ft_create_struct_for_philo(t_global *glb)
 	{
 		pthread_mutex_init(&glb->fork[i], NULL);
 		pthread_mutex_init(&glb->philo[i].mutex_meal, NULL);
+    pthread_mutex_init(&glb->philo[i].mutex_a, NULL);
 		glb->philo[i].id = i;
 		glb->philo[i].state = 0;
 		glb->philo[i].left_fork = &glb->fork[i];
