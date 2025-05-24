@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 16:31:12 by elopin            #+#    #+#             */
-/*   Updated: 2025/05/18 18:27:37 by elopin           ###   ########.fr       */
+/*   Updated: 2025/05/21 22:36:38 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,20 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
+
+void	choose_direction_unlock(t_philo *philo, int i, int y);
+
+bool	check_if_dead(t_philo *philo)
+{
+	bool	is_alive;
+
+	pthread_mutex_lock(&philo->mutex_meal);
+	pthread_mutex_lock(philo->death_mu);
+	is_alive = (*philo->death != 0);
+	pthread_mutex_unlock(philo->death_mu);
+	pthread_mutex_unlock(&philo->mutex_meal);
+	return (is_alive);
+}
 
 long	get_time_in_ms(void)
 {
@@ -23,52 +37,94 @@ long	get_time_in_ms(void)
 	return (t.tv_sec * 1000 + t.tv_usec / 1000);
 }
 
+int	choose_direction(t_philo *philo, int *i, int *y)
+{
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
+
+	if (philo->left_fork < philo->right_fork)
+	{
+		first = philo->left_fork;
+		second = philo->right_fork;
+	}
+	else
+	{
+		first = philo->right_fork;
+		second = philo->left_fork;
+	}
+	if (!*i && !pthread_mutex_lock(first))
+	{
+		pti_printf("%ld %d has taken a fork\n", philo);
+		first = philo->left_fork;
+		i++;
+	}
+	if (!*y && !pthread_mutex_lock(second))
+	{
+		pti_printf("%ld %d has taken a fork\n", philo);
+		second = philo->right_fork;
+		y++;
+	}
+	choose_direction_unlock(philo, *i, *y);
+	return (1);
+}
+
+void	choose_direction_unlock(t_philo *philo, int i, int y)
+{
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
+
+	(void)i;
+	(void)y;
+	if (philo->left_fork < philo->right_fork)
+	{
+		first = philo->left_fork;
+		second = philo->right_fork;
+	}
+	else
+	{
+		first = philo->right_fork;
+		second = philo->left_fork;
+	}
+	pti_printf("%ld %d is eating\n", philo);
+	pthread_mutex_lock(&philo->mutex_meal);
+	philo->last_meal = get_time_in_ms();
+	pthread_mutex_unlock(&philo->mutex_meal);
+	usleep(philo->rules->time_to_eat * 1000);
+	pthread_mutex_unlock(first);
+	pthread_mutex_unlock(second);
+}
+
 void	*ft_routine(void *arg)
 {
 	t_philo	*philo;
 	int		i;
 	int		y;
-	long	start;
-	int	a;
+	int		a;
 
-	a = -1;
 	philo = (t_philo *)arg;
-	start = get_time_in_ms();
-	philo->last_meal = get_time_in_ms();
-	while (42 && *philo->death)
+	while (check_if_dead(philo))
 	{
-		if (philo->rules->loop > 0 && ++a > philo->rules->loop)
-			break;
+		y = -1;
+		i = -1;
+		a = 0;
+		pthread_mutex_lock(&philo->mutex_meal);
+		philo->last_meal = get_time_in_ms();
+		pthread_mutex_unlock(&philo->mutex_meal);
+		if (philo->id % 2 == 0)
+			usleep(1000);
+		if (philo->rules->loop > 0 && ++philo->a >= philo->rules->loop)
+			return (NULL);
 		i = 0;
 		y = 0;
-		printf("%ld %d sleep\n", get_time_in_ms() - philo->start,philo->id);
-		usleep(philo->rules->time_to_sleep * 1000);
-		printf("%ld %d think\n", get_time_in_ms() - philo->start,philo->id);
-		while (*philo->death && (!i || !y))
+		if (!a)
+			a = choose_direction(philo, &i, &y);
+		if (check_if_dead(philo))
 		{
-			if (*philo->death && !i && !pthread_mutex_lock(philo->left_fork)
-				&& ++i)
-				printf("%ld %d taken fork\n", get_time_in_ms() - philo->start,philo->id);
-			if (*philo->death && !y && !pthread_mutex_lock(philo->right_fork)
-				&& ++y)
-				printf("%ld %d taken fork\n", get_time_in_ms() - philo->start ,philo->id);
-			pthread_mutex_lock(&philo->mutex_meal);
-			philo->last_meal = get_time_in_ms();
-			pthread_mutex_unlock(&philo->mutex_meal);
+			pti_printf("%ld %d is sleeping\n", philo);
+			usleep(philo->rules->time_to_sleep * 1000);
 		}
-		printf("%ld %d eat\n", get_time_in_ms() - philo->start,philo->id);
-		usleep(philo->rules->time_to_eat * 1000);
-		pthread_mutex_unlock(philo->left_fork);
-		pthread_mutex_unlock(philo->right_fork);
-		start = get_time_in_ms();
+		if (check_if_dead(philo))
+			pti_printf("%ld %d is thinking\n", philo);
 	}
 	return (NULL);
-}
-
-void	fake_routine(t_global *glb)
-{
-	printf("%ld %d think\n", get_time_in_ms() - glb->start,1);
-	printf("%ld %d taken fork\n", get_time_in_ms() - glb->start,1);
-	usleep(glb->rules.time_to_die * 1000);
-	printf("%ld %d die", get_time_in_ms() - glb->start,1);
 }

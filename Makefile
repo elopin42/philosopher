@@ -1,5 +1,5 @@
 NAME = philo
-FLAGS = -Wall -Werror -Wextra -I inc/ -g3
+FLAGS = -Wall -Werror -Wextra -I inc/ -g3 #-fsanitize=thread
 
 SRCSDIR = srcs/
 OBJSDIR = objs/
@@ -7,7 +7,8 @@ OBJSDIR = objs/
 SRCSF = main.c	\
 		init.c	\
 		tools_libft.c	\
-		routine.c
+		routine.c	\
+		clean_up.c
 SRCS = $(addprefix $(SRCSDIR), $(SRCSF))
 OBJSF = $(SRCSF:.c=.o)
 OBJS = $(addprefix $(OBJSDIR), $(OBJSF))
