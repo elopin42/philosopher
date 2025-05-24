@@ -116,7 +116,7 @@ void	*ft_routine(void *arg)
     pthread_mutex_lock(&philo->mutex_a);
     a_val = ++philo->a;
     pthread_mutex_unlock(&philo->mutex_a);
-		if (philo->rules->loop > 0 && a_val >= philo->rules->loop)
+		if (philo->rules->loop > 0 && a_val > philo->rules->loop)
 			return (NULL);
 		i = 0;
 		y = 0;
