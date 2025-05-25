@@ -72,8 +72,8 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
 {
 	pthread_mutex_t	*first;
 	pthread_mutex_t	*second;
-
-	(void)i;
+	
+  (void)i;
 	(void)y;
 	if (philo->left_fork < philo->right_fork)
 	{
@@ -86,10 +86,13 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
 		second = philo->left_fork;
 	}
 	pti_printf("%ld %d is eating\n", philo);
+	usleep(philo->rules->time_to_eat * 1000);
 	pthread_mutex_lock(&philo->mutex_meal);
 	philo->last_meal = get_time_in_ms();
 	pthread_mutex_unlock(&philo->mutex_meal);
-	usleep(philo->rules->time_to_eat * 1000);
+  pthread_mutex_lock(&philo->mutex_a);
+  ++philo->a;
+  pthread_mutex_unlock(&philo->mutex_a);
 	pthread_mutex_unlock(first);
 	pthread_mutex_unlock(second);
 }
@@ -100,24 +103,18 @@ void	*ft_routine(void *arg)
 	int		i;
 	int		y;
 	int		a;
-  int a_val;
 
 	philo = (t_philo *)arg;
+	pthread_mutex_lock(&philo->mutex_meal);
+	philo->last_meal = get_time_in_ms();
+	pthread_mutex_unlock(&philo->mutex_meal);
 	while (check_if_dead(philo))
 	{
 		y = -1;
 		i = -1;
 		a = 0;
-		pthread_mutex_lock(&philo->mutex_meal);
-		philo->last_meal = get_time_in_ms();
-		pthread_mutex_unlock(&philo->mutex_meal);
 		if (philo->id % 2 == 0)
-			usleep(1000);
-    pthread_mutex_lock(&philo->mutex_a);
-    a_val = ++philo->a;
-    pthread_mutex_unlock(&philo->mutex_a);
-		if (philo->rules->loop > 0 && a_val > philo->rules->loop)
-			return (NULL);
+			usleep(2000);
 		i = 0;
 		y = 0;
 		if (!a)

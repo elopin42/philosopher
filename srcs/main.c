@@ -50,7 +50,7 @@ void	*ft_thread_death(void *arg)
       pthread_mutex_lock(&glb->philo[i].mutex_a);
       a_val = glb->philo[i].a;
       pthread_mutex_unlock(&glb->philo[i].mutex_a);
-			if (glb->rules.loop > 0 && a_val > glb->rules.loop)
+			if (glb->rules.loop > 0 && a_val >= glb->rules.loop)
 			{
 				pthread_mutex_lock(&glb->death_mu);
 				glb->death = 0;
@@ -84,10 +84,7 @@ int	main(int ac, char **av)
 		pthread_create(&threads[i], NULL, ft_routine, &glb.philo[i]);
 	i = -1;
 	while(++i < glb.rules.nb_philo)
-	{
 		pthread_join(threads[i], NULL);
-		//printf("threads[%d]\n", i);
-	}
 	pthread_join(glb.thread_death, NULL);
 	free(threads);
 	ft_clean_up(&glb);
