@@ -14,21 +14,21 @@
 200 1 is eating
 400 4 is thinking
 400 2 is thinking
-400 4 has taken a fork
-400 4 has taken a fork
-400 4 is eating
-400 5 has taken a fork
-401 1 is sleeping
 401 3 is sleeping
+401 1 is sleeping
+401 4 has taken a fork
 401 2 has taken a fork
 401 2 has taken a fork
 401 2 is eating
+401 4 has taken a fork
+401 4 is eating
+401 5 has taken a fork
+601 1 is thinking
 601 3 is thinking
-601 4 is sleeping
 601 2 is sleeping
+601 4 is sleeping
 601 5 has taken a fork
 601 5 is eating
-601 1 is thinking
 603 3 has taken a fork
 603 3 has taken a fork
 603 3 is eating
