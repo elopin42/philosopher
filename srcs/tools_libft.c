@@ -17,12 +17,12 @@
 
 void	pti_printf(char *str, t_philo *philo)
 {
-	pthread_mutex_lock(philo->print_mutex);
-	if (check_if_dead(philo))
-		printf(str, get_time_in_ms() - philo->start, philo->id + 1);
-	else if (ft_strnstr(str, "died", ft_strlen(str)))
-		printf(str, get_time_in_ms() - philo->start, philo->id + 1);
-	pthread_mutex_unlock(philo->print_mutex);
+  pthread_mutex_lock(philo->print_mutex);
+  pthread_mutex_lock(philo->death_mu);
+  if (*philo->death || ft_strnstr(str, "died", ft_strlen(str)))
+	  printf(str, get_time_in_ms() - philo->start, philo->id + 1);
+  pthread_mutex_unlock(philo->death_mu);
+  pthread_mutex_unlock(philo->print_mutex);
 }
 int		ft_strnstr(const char	*b, const char	*li, size_t	l)
 {

@@ -66,6 +66,9 @@ bool	ft_init_before_play(t_global *glb, int ac, char **av)
 	pthread_mutex_init(&glb->mutex_meal, NULL);
 	pthread_mutex_init(&glb->death_mu, NULL);
 	pthread_mutex_init(&glb->print_mutex, NULL);
+  glb->nbr_done = 0;
+	pthread_mutex_init(&glb->mutex_done, NULL);
+	glb->rules.glb_ptr = glb;
 	ft_create_struct_for_philo(glb);
 	return (true);
 }

@@ -26,19 +26,16 @@ void	*ft_thread_death(void *arg)
 	t_global	*glb;
 	long		laps;
 	int			i;
-  int a_val;
 
-  a_val = 0;
-	glb = (t_global *)arg;
+  glb = (t_global *)arg;
 	while (1)
 	{
 		i = -1;
 		while (++i < glb->nbr_philo)
 		{
 			pthread_mutex_lock(&glb->philo[i].mutex_meal);
-			laps = (glb->philo[i].last_meal - get_time_in_ms()) * -1;
+      laps = get_time_in_ms() - glb->philo[i].last_meal;
 			pthread_mutex_unlock(&glb->philo[i].mutex_meal);
-			//printf("laps --> %ld, time --> %d\n", laps, glb->rules.time_to_die);
 			if (laps >= glb->rules.time_to_die)
 			{
 				pthread_mutex_lock(&glb->death_mu);
@@ -47,19 +44,19 @@ void	*ft_thread_death(void *arg)
 				pti_printf("%ld %d died\n", glb->philo);
 				return (NULL);
 			}
-      pthread_mutex_lock(&glb->philo[i].mutex_a);
-      a_val = glb->philo[i].a;
-      pthread_mutex_unlock(&glb->philo[i].mutex_a);
-			if (glb->rules.loop > 0 && a_val >= glb->rules.loop)
-			{
-				pthread_mutex_lock(&glb->death_mu);
-				glb->death = 0;
-				pthread_mutex_unlock(&glb->death_mu);
-				printf("%d loop\n", glb->rules.loop);
-				return (NULL);
-			}
+      pthread_mutex_lock(&glb->mutex_done);
+      if (glb->nbr_done == glb->nbr_philo)
+      {
+        pthread_mutex_lock(&glb->death_mu);
+        glb->death = 0;
+        pthread_mutex_unlock(&glb->death_mu);
+        pthread_mutex_unlock(&glb->mutex_done);
+        printf("%d loop\n", glb->rules.loop);
+        return (NULL);
+      }
+      pthread_mutex_unlock(&glb->mutex_done);
 		}
-		usleep(1000);
+		usleep(200);
 	}
 	return (NULL);
 }
@@ -81,7 +78,10 @@ int	main(int ac, char **av)
 	pthread_create(&glb.thread_death, NULL, ft_thread_death, &glb);
 	glb.start = get_time_in_ms();
 	while (++i < glb.rules.nb_philo)
+  {
 		pthread_create(&threads[i], NULL, ft_routine, &glb.philo[i]);
+    usleep(1000);
+  }
 	i = -1;
 	while(++i < glb.rules.nb_philo)
 		pthread_join(threads[i], NULL);

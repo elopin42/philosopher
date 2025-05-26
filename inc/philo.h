@@ -27,6 +27,7 @@ typedef struct s_rules
 	int				time_to_eat;
 	int				time_to_sleep;
 	int				loop;
+  struct s_global *glb_ptr;
 }					t_rules;
 
 typedef struct s_philo
@@ -58,6 +59,8 @@ typedef struct s_global
 	pthread_mutex_t	death_mu;
 	pthread_mutex_t	print_mutex;
 	long			start;
+  int nbr_done;
+  pthread_mutex_t mutex_done;
 }					t_global;
 
 long				get_time_in_ms(void);
