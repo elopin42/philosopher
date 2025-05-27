@@ -72,5 +72,6 @@ void	pti_printf(char *str, t_philo *philo);
 bool	check_if_dead(t_philo *philo);
 int ft_strlen(char *str);
 int	ft_strnstr(const char	*b, const char	*li, size_t	l);
+void	ft_usleep(long duration_ms, t_philo *philo);
 
 #endif

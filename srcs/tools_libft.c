@@ -96,3 +96,21 @@ int	ft_atoi(const char *str)
 		return (-1);
 	return (ret * sign);
 }
+
+void	ft_usleep(long duration_ms, t_philo *philo)
+{
+	long	start;
+	long	now;
+
+	start = get_time_in_ms();
+	while (1)
+	{
+		now = get_time_in_ms();
+		if (now - start >= duration_ms)
+			break;
+		if (!check_if_dead(philo))
+			break;
+		usleep(500);
+	}
+}
+
