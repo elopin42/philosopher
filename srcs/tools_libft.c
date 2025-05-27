@@ -15,6 +15,18 @@
 #include <pthread.h>
 #include <stdio.h>
 
+int	check_long(const char *ts)
+{
+	if (ts[0] == '-')
+	{
+		if (ft_strlen((char *)ts) > 11)
+			return (0);
+	}
+	else if (ft_strlen((char *)ts) > 10)
+		return (0);
+	return (1);
+}
+
 void	pti_printf(char *str, t_philo *philo)
 {
   pthread_mutex_lock(philo->print_mutex);
@@ -64,7 +76,7 @@ int	ft_atoi(const char *str)
 	int	sign;
 	int	i;
 
-	if (!str || str[0] == '\0')
+	if (!str || str[0] == '\0' || !check_long(str))
 		return (-1);
 	i = 0;
 	ret = 0;
