@@ -120,7 +120,8 @@ void	eat(t_philo *philo)
 		first = philo->right_fork;
 		second = philo->left_fork;
 	}
-
+  if (check_if_dead(philo))
+    return ;
 	pthread_mutex_lock(first);
 	pti_printf("%ld %d has taken a fork\n", philo);
 	pthread_mutex_lock(second);
@@ -129,10 +130,10 @@ void	eat(t_philo *philo)
 	pthread_mutex_lock(&philo->mutex_meal);
 	philo->last_meal = get_time_in_ms();
 	pthread_mutex_unlock(&philo->mutex_meal);
-
 	pti_printf("%ld %d is eating\n", philo);
-	usleep(philo->rules->time_to_eat * 1000);
-
+	if (!check_if_dead(philo))
+    return ;
+  usleep(philo->rules->time_to_eat * 1000);
 	pthread_mutex_lock(&philo->mutex_a);
 	philo->a++;
 	if (philo->a == philo->rules->loop - 1)
@@ -171,10 +172,12 @@ void	*ft_routine(void *arg)
 		  pthread_mutex_unlock(&philo->mutex_a);
 	  }
 		eat(philo);
-		if (!check_if_dead(philo)) break;
+		if (!check_if_dead(philo)) 
+      return (NULL);
 		pti_printf("%ld %d is sleeping\n", philo);
 		usleep(philo->rules->time_to_sleep * 1000);
-		if (!check_if_dead(philo)) break;
+		if (!check_if_dead(philo)) 
+      return (NULL);
 		pti_printf("%ld %d is thinking\n", philo);
 	}
 	return (NULL);

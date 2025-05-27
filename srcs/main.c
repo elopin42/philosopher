@@ -83,7 +83,7 @@ int	main(int ac, char **av)
     if (i % 2 == 0)
 	    usleep(200);
     else
-	  usleep(150);
+	    usleep(150);
   }
 	i = -1;
 	while(++i < glb.rules.nb_philo)
