@@ -80,7 +80,10 @@ int	main(int ac, char **av)
 	while (++i < glb.rules.nb_philo)
   {
 		pthread_create(&threads[i], NULL, ft_routine, &glb.philo[i]);
-    usleep(1000);
+    if (i % 2 == 0)
+	    usleep(200);
+    else
+	  usleep(150);
   }
 	i = -1;
 	while(++i < glb.rules.nb_philo)

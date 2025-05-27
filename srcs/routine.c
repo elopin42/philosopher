@@ -135,7 +135,7 @@ void	eat(t_philo *philo)
 
 	pthread_mutex_lock(&philo->mutex_a);
 	philo->a++;
-	if (philo->a == philo->rules->loop)
+	if (philo->a == philo->rules->loop - 1)
 	{
 		pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
 		philo->rules->glb_ptr->nbr_done++;
@@ -160,6 +160,16 @@ void	*ft_routine(void *arg)
 
 	while (check_if_dead(philo))
 	{
+    if (philo->rules->loop > 0)
+	  {
+		  pthread_mutex_lock(&philo->mutex_a);
+		  if (philo->a >= philo->rules->loop - 1)
+		  {
+			  pthread_mutex_unlock(&philo->mutex_a);
+			  break;
+		  }
+		  pthread_mutex_unlock(&philo->mutex_a);
+	  }
 		eat(philo);
 		if (!check_if_dead(philo)) break;
 		pti_printf("%ld %d is sleeping\n", philo);
