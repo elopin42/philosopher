@@ -60,7 +60,7 @@ bool	ft_init_before_play(t_global *glb, int ac, char **av)
 	else
 		glb->rules.loop = -1;
 	if (glb->rules.nb_philo <= 0 || glb->rules.time_to_eat < 0
-		|| glb->rules.time_to_die < 0 || glb->rules.time_to_sleep < 0
+		|| glb->rules.time_to_die <= 0 || glb->rules.time_to_sleep < 0
 		|| (ac == 6 && glb->rules.loop < 0))
 		return (printf("bad_value\n"), false);
 	pthread_mutex_init(&glb->mutex_meal, NULL);

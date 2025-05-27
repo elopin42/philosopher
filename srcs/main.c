@@ -71,7 +71,7 @@ int	main(int ac, char **av)
 	if (!ft_init_before_play(&glb, ac, av))
 		return (printf("Error\n"), 1);
 	if (glb.nbr_philo == 1)
-		return (fake_routine(&glb), 0);
+		return (fake_routine(&glb), ft_clean_up(&glb),0);
 	threads = malloc(sizeof(pthread_t) * glb.rules.nb_philo);
 	if (!threads)
 		return (1);

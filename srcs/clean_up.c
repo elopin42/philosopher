@@ -26,6 +26,8 @@ void	ft_clean_up(t_global *glb)
 	}
 	pthread_mutex_destroy(&glb->mutex_meal);
 	pthread_mutex_destroy(&glb->death_mu);
+  pthread_mutex_destroy(&glb->print_mutex);
+  pthread_mutex_destroy(&glb->mutex_done);
 	free(glb->fork);
 	free(glb->philo);
 	i = -1;
