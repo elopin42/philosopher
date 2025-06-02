@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 16:31:12 by elopin            #+#    #+#             */
-/*   Updated: 2025/06/02 23:09:37 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 23:20:50 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,35 +15,54 @@
 #include <stdio.h>
 #include <unistd.h>
 
-void	choose_direction_unlock(t_philo *philo, int i, int y);
-
-bool	check_if_dead(t_philo *philo)
+static void	update_meal_count(t_philo *philo)
 {
-	bool	is_alive;
-
-	pthread_mutex_lock(philo->death_mu);
-	is_alive = (*philo->death != 0);
-	pthread_mutex_unlock(philo->death_mu);
-	return (is_alive);
+	pthread_mutex_lock(&philo->mutex_a);
+	philo->a++;
+	if (philo->a == philo->rules->loop)
+	{
+		pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
+		philo->rules->glb_ptr->nbr_done++;
+		pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
+	}
+	pthread_mutex_unlock(&philo->mutex_a);
 }
 
-long	get_time_in_ms(void)
+static void	lock_forks_and_eat(t_philo *philo, pthread_mutex_t *first,
+		pthread_mutex_t *second)
 {
-	struct timeval	t;
-
-	gettimeofday(&t, NULL);
-	return (t.tv_sec * 1000 + t.tv_usec / 1000);
+	pthread_mutex_lock(first);
+	if (!check_if_dead(philo))
+	{
+		pthread_mutex_unlock(first);
+		return ;
+	}
+	pti_printf("%ld %d has taken a fork\n", philo);
+	pthread_mutex_lock(second);
+	if (!check_if_dead(philo))
+	{
+		pthread_mutex_unlock(second);
+		pthread_mutex_unlock(first);
+		return ;
+	}
+	pti_printf("%ld %d has taken a fork\n", philo);
+	pthread_mutex_lock(&philo->mutex_meal);
+	philo->last_meal = get_time_in_ms();
+	pthread_mutex_unlock(&philo->mutex_meal);
+	pti_printf("%ld %d is eating\n", philo);
+	ft_usleep(philo->rules->time_to_eat, philo);
+	update_meal_count(philo);
+	pthread_mutex_unlock(second);
+	pthread_mutex_unlock(first);
 }
 
 void	eat(t_philo *philo)
 {
 	pthread_mutex_t	*first;
 	pthread_mutex_t	*second;
-	bool			first_locked;
-	bool			second_locked;
 
-	first_locked = false;
-	second_locked = false;
+	if (!check_if_dead(philo))
+		return ;
 	if (philo->id % 2 == 0)
 	{
 		first = philo->left_fork;
@@ -54,37 +73,22 @@ void	eat(t_philo *philo)
 		first = philo->right_fork;
 		second = philo->left_fork;
 	}
-	if (!check_if_dead(philo))
-		return ;
-	pthread_mutex_lock(first);
-	first_locked = true;
-	if (!check_if_dead(philo))
-		goto cleanup;
-	pti_printf("%ld %d has taken a fork\n", philo);
-	pthread_mutex_lock(second);
-	second_locked = true;
-	if (!check_if_dead(philo))
-		goto cleanup;
-	pti_printf("%ld %d has taken a fork\n", philo);
-	pthread_mutex_lock(&philo->mutex_meal);
-	philo->last_meal = get_time_in_ms();
-	pthread_mutex_unlock(&philo->mutex_meal);
-	pti_printf("%ld %d is eating\n", philo);
-	ft_usleep(philo->rules->time_to_eat, philo);
-	pthread_mutex_lock(&philo->mutex_a);
-	philo->a++;
-	if (philo->a == philo->rules->loop)
+	lock_forks_and_eat(philo, first, second);
+}
+
+static int	check_loop_condition(t_philo *philo)
+{
+	if (philo->rules->loop > 0)
 	{
-		pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
-		philo->rules->glb_ptr->nbr_done++;
-		pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
+		pthread_mutex_lock(&philo->mutex_a);
+		if (philo->a >= philo->rules->loop)
+		{
+			pthread_mutex_unlock(&philo->mutex_a);
+			return (0);
+		}
+		pthread_mutex_unlock(&philo->mutex_a);
 	}
-	pthread_mutex_unlock(&philo->mutex_a);
-cleanup:
-	if (second_locked)
-		pthread_mutex_unlock(second);
-	if (first_locked)
-		pthread_mutex_unlock(first);
+	return (1);
 }
 
 void	*ft_routine(void *arg)
@@ -99,16 +103,8 @@ void	*ft_routine(void *arg)
 		ft_usleep(philo->rules->time_to_eat / 2, philo);
 	while (check_if_dead(philo))
 	{
-		if (philo->rules->loop > 0)
-		{
-			pthread_mutex_lock(&philo->mutex_a);
-			if (philo->a >= philo->rules->loop)
-			{
-				pthread_mutex_unlock(&philo->mutex_a);
-				break ;
-			}
-			pthread_mutex_unlock(&philo->mutex_a);
-		}
+		if (!check_loop_condition(philo))
+			break ;
 		eat(philo);
 		if (!check_if_dead(philo))
 			return (NULL);
