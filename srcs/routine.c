@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 16:31:12 by elopin            #+#    #+#             */
-/*   Updated: 2025/06/02 20:00:30 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 22:52:51 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,8 +104,10 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
 	pthread_mutex_unlock(first);
 	pthread_mutex_unlock(second);
 }*/
-void	eat(t_philo *philo)
+/*void	eat(t_philo *philo)
 {
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
 	if (philo->id % 2 == 0)
 	{
 		first = philo->left_fork;
@@ -140,9 +142,68 @@ void	eat(t_philo *philo)
 	pthread_mutex_unlock(&philo->mutex_a);
 	pthread_mutex_unlock(first);
 	pthread_mutex_unlock(second);
+}*/
+
+void eat(t_philo *philo)
+{
+    pthread_mutex_t *first;
+    pthread_mutex_t *second;
+    bool first_locked = false, second_locked = false;
+    
+    if (philo->id % 2 == 0)
+    {
+        first = philo->left_fork;
+        second = philo->right_fork;
+    }
+    else
+    {
+        first = philo->right_fork;
+        second = philo->left_fork;
+    }
+    
+    if (!check_if_dead(philo))
+        return;
+        
+    pthread_mutex_lock(first);
+    first_locked = true;
+    if (!check_if_dead(philo))
+        goto cleanup;
+        
+    pti_printf("%ld %d has taken a fork\n", philo);
+    
+    pthread_mutex_lock(second);
+    second_locked = true;
+    if (!check_if_dead(philo))
+        goto cleanup;
+        
+    pti_printf("%ld %d has taken a fork\n", philo);
+    
+    pthread_mutex_lock(&philo->mutex_meal);
+    philo->last_meal = get_time_in_ms();
+    pthread_mutex_unlock(&philo->mutex_meal);
+    
+    pti_printf("%ld %d is eating\n", philo);
+    
+    ft_usleep(philo->rules->time_to_eat, philo);
+    
+    pthread_mutex_lock(&philo->mutex_a);
+    philo->a++;
+    if (philo->a == philo->rules->loop)
+    {
+        pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
+        philo->rules->glb_ptr->nbr_done++;
+        pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
+    }
+    pthread_mutex_unlock(&philo->mutex_a);
+    
+cleanup:
+    if (second_locked)
+        pthread_mutex_unlock(second);
+    if (first_locked)
+        pthread_mutex_unlock(first);
 }
 
-void	*ft_routine(void *arg)
+/*void	*ft_routine(void *arg)
 {
 	t_philo	*philo;
 
@@ -174,4 +235,50 @@ void	*ft_routine(void *arg)
 		pti_printf("%ld %d is thinking\n", philo);
 	}
 	return (NULL);
+}*/
+
+void *ft_routine(void *arg)
+{
+    t_philo *philo;
+
+    philo = (t_philo *)arg;
+    pthread_mutex_lock(&philo->mutex_meal);
+    philo->last_meal = get_time_in_ms();
+    pthread_mutex_unlock(&philo->mutex_meal);
+    
+    // Décaler les philosophes pairs pour éviter les deadlocks
+    if (philo->id % 2 == 0)
+        ft_usleep(philo->rules->time_to_eat / 2, philo);
+        
+    while (check_if_dead(philo))
+    {
+        if (philo->rules->loop > 0)
+        {
+            pthread_mutex_lock(&philo->mutex_a);
+            if (philo->a >= philo->rules->loop)
+            {
+                pthread_mutex_unlock(&philo->mutex_a);
+                break;
+            }
+            pthread_mutex_unlock(&philo->mutex_a);
+        }
+        
+        eat(philo);
+        
+        if (!check_if_dead(philo))
+            return (NULL);
+            
+        pti_printf("%ld %d is sleeping\n", philo);
+        ft_usleep(philo->rules->time_to_sleep, philo);
+        
+        if (!check_if_dead(philo))
+            return (NULL);
+            
+        pti_printf("%ld %d is thinking\n", philo);
+        
+        // Petit délai pour éviter la famine
+        if (philo->rules->nb_philo % 2 == 1)
+            ft_usleep(1, philo);
+    }
+    return (NULL);
 }
