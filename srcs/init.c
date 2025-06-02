@@ -6,18 +6,15 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 20:01:59 by elopin            #+#    #+#             */
-/*   Updated: 2025/06/02 20:00:22 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 23:12:48 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/philo.h"
 #include <pthread.h>
 
-bool	ft_create_struct_for_philo(t_global *glb)
+bool	ft_create_struct_for_philo(t_global *glb, int i)
 {
-	int	i;
-
-	i = -1;
 	glb->philo = malloc(sizeof(t_philo) * glb->rules.nb_philo);
 	if (!glb->philo)
 		return (false);
@@ -69,6 +66,6 @@ bool	ft_init_before_play(t_global *glb, int ac, char **av)
 	glb->nbr_done = 0;
 	pthread_mutex_init(&glb->mutex_done, NULL);
 	glb->rules.glb_ptr = glb;
-	ft_create_struct_for_philo(glb);
+	ft_create_struct_for_philo(glb, -1);
 	return (true);
 }

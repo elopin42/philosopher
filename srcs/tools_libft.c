@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 13:33:42 by elopin            #+#    #+#             */
-/*   Updated: 2025/06/02 22:51:51 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 23:10:53 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ void	pti_printf(char *str, t_philo *philo)
 	pthread_mutex_unlock(philo->death_mu);
 	pthread_mutex_unlock(philo->print_mutex);
 }
+
 int	ft_strnstr(const char *b, const char *li, size_t l)
 {
 	size_t	i;
@@ -97,45 +98,24 @@ int	ft_atoi(const char *str)
 	return (ret * sign);
 }
 
-/*void	ft_usleep(long duration_ms, t_philo *philo)
+void	ft_usleep(long duration_ms, t_philo *philo)
 {
 	long	start;
 	long	now;
+	long remaining;
 
 	start = get_time_in_ms();
 	while (1)
 	{
 		now = get_time_in_ms();
-		if (now - start >= duration_ms)
+		remaining = duration_ms - (now - start);
+		if (remaining <= 0)
 			break ;
 		if (!check_if_dead(philo))
 			break ;
-		usleep(500);
+		if (remaining > 10)
+			usleep(1000);
+		else
+			usleep(100);
 	}
-}*/
-
-void ft_usleep(long duration_ms, t_philo *philo)
-{
-    long start;
-    long now;
-    long remaining;
-
-    start = get_time_in_ms();
-    while (1)
-    {
-        now = get_time_in_ms();
-        remaining = duration_ms - (now - start);
-        
-        if (remaining <= 0)
-            break;
-            
-        if (!check_if_dead(philo))
-            break;
-            
-        // Sleep plus court pour plus de précision
-        if (remaining > 10)
-            usleep(1000); // 1ms
-        else
-            usleep(100);  // 0.1ms pour la fin
-    }
 }
