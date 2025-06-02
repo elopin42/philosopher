@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 20:01:59 by elopin            #+#    #+#             */
-/*   Updated: 2025/05/21 19:09:50 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 20:00:22 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ bool	ft_create_struct_for_philo(t_global *glb)
 	{
 		pthread_mutex_init(&glb->fork[i], NULL);
 		pthread_mutex_init(&glb->philo[i].mutex_meal, NULL);
-    pthread_mutex_init(&glb->philo[i].mutex_a, NULL);
+		pthread_mutex_init(&glb->philo[i].mutex_a, NULL);
 		glb->philo[i].id = i;
 		glb->philo[i].state = 0;
 		glb->philo[i].left_fork = &glb->fork[i];
@@ -66,7 +66,7 @@ bool	ft_init_before_play(t_global *glb, int ac, char **av)
 	pthread_mutex_init(&glb->mutex_meal, NULL);
 	pthread_mutex_init(&glb->death_mu, NULL);
 	pthread_mutex_init(&glb->print_mutex, NULL);
-  glb->nbr_done = 0;
+	glb->nbr_done = 0;
 	pthread_mutex_init(&glb->mutex_done, NULL);
 	glb->rules.glb_ptr = glb;
 	ft_create_struct_for_philo(glb);

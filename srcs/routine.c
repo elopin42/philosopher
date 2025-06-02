@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 16:31:12 by elopin            #+#    #+#             */
-/*   Updated: 2025/05/21 22:36:38 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 20:00:30 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,8 @@ long	get_time_in_ms(void)
 
 /*int choose_direction(t_philo *philo, int *i, int *y)
 {
-	pthread_mutex_t *first;
-	pthread_mutex_t *second;
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
 
 	if (philo->left_fork < philo->right_fork)
 	{
@@ -50,7 +50,6 @@ long	get_time_in_ms(void)
 		first = philo->right_fork;
 		second = philo->left_fork;
 	}
-
 	while (check_if_dead(philo) && (!*i || !*y))
 	{
 		if (!*i && !pthread_mutex_lock(first))
@@ -73,7 +72,9 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
 {
 	pthread_mutex_t	*first;
 	pthread_mutex_t	*second;
-	
+	pthread_mutex_t	*first;
+	pthread_mutex_t	*second;
+
   (void)i;
 	(void)y;
 	if (philo->left_fork < philo->right_fork)
@@ -95,9 +96,9 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
   ++philo->a;
   if (philo->a == philo->rules->loop)
   {
-	  pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
-	  philo->rules->glb_ptr->nbr_done++;
-	  pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
+		pthread_mutex_lock(&philo->rules->glb_ptr->mutex_done);
+		philo->rules->glb_ptr->nbr_done++;
+		pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
   }
   pthread_mutex_unlock(&philo->mutex_a);
 	pthread_mutex_unlock(first);
@@ -105,9 +106,6 @@ void	choose_direction_unlock(t_philo *philo, int i, int y)
 }*/
 void	eat(t_philo *philo)
 {
-	pthread_mutex_t *first;
-	pthread_mutex_t *second;
-
 	if (philo->id % 2 == 0)
 	{
 		first = philo->left_fork;
@@ -118,8 +116,8 @@ void	eat(t_philo *philo)
 		first = philo->right_fork;
 		second = philo->left_fork;
 	}
-  if (!check_if_dead(philo))
-    return ;
+	if (!check_if_dead(philo))
+		return ;
 	pthread_mutex_lock(first);
 	pti_printf("%ld %d has taken a fork\n", philo);
 	pthread_mutex_lock(second);
@@ -129,8 +127,8 @@ void	eat(t_philo *philo)
 	pthread_mutex_unlock(&philo->mutex_meal);
 	pti_printf("%ld %d is eating\n", philo);
 	if (!check_if_dead(philo))
-    return ;
-  ft_usleep(philo->rules->time_to_eat, philo);
+		return ;
+	ft_usleep(philo->rules->time_to_eat, philo);
 	pthread_mutex_lock(&philo->mutex_a);
 	philo->a++;
 	if (philo->a == philo->rules->loop)
@@ -140,43 +138,40 @@ void	eat(t_philo *philo)
 		pthread_mutex_unlock(&philo->rules->glb_ptr->mutex_done);
 	}
 	pthread_mutex_unlock(&philo->mutex_a);
-
 	pthread_mutex_unlock(first);
 	pthread_mutex_unlock(second);
 }
 
 void	*ft_routine(void *arg)
 {
-	t_philo *philo = (t_philo *)arg;
+	t_philo	*philo;
 
+	philo = (t_philo *)arg;
 	pthread_mutex_lock(&philo->mutex_meal);
 	philo->last_meal = get_time_in_ms();
 	pthread_mutex_unlock(&philo->mutex_meal);
-
 	if (philo->id % 2 == 0)
 		usleep(philo->rules->time_to_eat * 500);
-
 	while (check_if_dead(philo))
 	{
-    if (philo->rules->loop > 0)
-	  {
-		  pthread_mutex_lock(&philo->mutex_a);
-		  if (philo->a >= philo->rules->loop)
-		  {
-			  pthread_mutex_unlock(&philo->mutex_a);
-			  break;
-		  }
-		  pthread_mutex_unlock(&philo->mutex_a);
-	  }
+		if (philo->rules->loop > 0)
+		{
+			pthread_mutex_lock(&philo->mutex_a);
+			if (philo->a >= philo->rules->loop)
+			{
+				pthread_mutex_unlock(&philo->mutex_a);
+				break ;
+			}
+			pthread_mutex_unlock(&philo->mutex_a);
+		}
 		eat(philo);
-		if (!check_if_dead(philo)) 
-      return (NULL);
+		if (!check_if_dead(philo))
+			return (NULL);
 		pti_printf("%ld %d is sleeping\n", philo);
 		ft_usleep(philo->rules->time_to_sleep, philo);
-		if (!check_if_dead(philo)) 
-      return (NULL);
+		if (!check_if_dead(philo))
+			return (NULL);
 		pti_printf("%ld %d is thinking\n", philo);
 	}
 	return (NULL);
 }
-

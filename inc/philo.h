@@ -6,7 +6,7 @@
 /*   By: elopin <elopin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 18:07:58 by elopin            #+#    #+#             */
-/*   Updated: 2025/05/21 17:14:49 by elopin           ###   ########.fr       */
+/*   Updated: 2025/06/02 20:00:39 by elopin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ typedef struct s_rules
 	int				time_to_eat;
 	int				time_to_sleep;
 	int				loop;
-  struct s_global *glb_ptr;
+	struct s_global	*glb_ptr;
 }					t_rules;
 
 typedef struct s_philo
@@ -42,9 +42,9 @@ typedef struct s_philo
 	long			last_meal;
 	pthread_mutex_t	mutex_meal;
 	pthread_mutex_t	*print_mutex;
-	pthread_mutex_t *death_mu;
-  pthread_mutex_t mutex_a;
-	int a;
+	pthread_mutex_t	*death_mu;
+	pthread_mutex_t	mutex_a;
+	int				a;
 }					t_philo;
 
 typedef struct s_global
@@ -59,8 +59,8 @@ typedef struct s_global
 	pthread_mutex_t	death_mu;
 	pthread_mutex_t	print_mutex;
 	long			start;
-  int nbr_done;
-  pthread_mutex_t mutex_done;
+	int				nbr_done;
+	pthread_mutex_t	mutex_done;
 }					t_global;
 
 long				get_time_in_ms(void);
@@ -68,10 +68,10 @@ bool				ft_init_before_play(t_global *glb, int ac, char **av);
 int					ft_atoi(const char *str);
 void				*ft_routine(void *arg);
 void				ft_clean_up(t_global *glb);
-void	pti_printf(char *str, t_philo *philo);
-bool	check_if_dead(t_philo *philo);
-int ft_strlen(char *str);
-int	ft_strnstr(const char	*b, const char	*li, size_t	l);
-void	ft_usleep(long duration_ms, t_philo *philo);
+void				pti_printf(char *str, t_philo *philo);
+bool				check_if_dead(t_philo *philo);
+int					ft_strlen(char *str);
+int					ft_strnstr(const char *b, const char *li, size_t l);
+void				ft_usleep(long duration_ms, t_philo *philo);
 
 #endif
