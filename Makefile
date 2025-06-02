@@ -1,5 +1,5 @@
 NAME = philo
-FLAGS = -Wall -Werror -Wextra -I inc/ -g3 #-fsanitize=thread
+FLAGS = -Wall -Werror -Wextra -I inc/ -g3 
 
 SRCSDIR = srcs/
 OBJSDIR = objs/
